@@ -753,7 +753,11 @@ def build_sorted_activities_by_successors(activity_set, activity_dependencies, p
     
     # Create a dictionary for easy lookup of priorities
     priority_dict = {activity: priority for activity, priority in priority_list}
-    
+
+    # Deterministic tie-break: position of the activity in the project file
+    # (without it, ties were broken by the iteration order of a Python set, which changes between runs)
+    file_order = {activity: index for index, activity in enumerate(activity_set)}
+
     # Keep track of the remaining activities to be scheduled
     remaining_activities = set(activity_set.keys())
     no_successors = [activity for activity in remaining_activities if not activity_dependencies.get(activity, ([], []))[1]]
@@ -764,7 +768,8 @@ def build_sorted_activities_by_successors(activity_set, activity_dependencies, p
 #        print("no_successors = ", no_successors)
         # Sort the activities with no successors by priority (descending order)
 #        no_successors.sort(key=lambda activity: priority_dict.get(activity, float('inf')))
-        no_successors.sort(key=lambda activity: priority_dict.get(activity, float('inf')), reverse=True)
+        # (on a tie, the activity that comes first in the project file is chosen)
+        no_successors.sort(key=lambda activity: (priority_dict.get(activity, float('inf')), -file_order[activity]), reverse=True)
 
         # Add the highest-priority activity with no successors to the sorted list
         current_activity = no_successors.pop(0)  # Select the first one with the highest priority
@@ -789,7 +794,11 @@ def build_sorted_activities_by_predecessors(activity_set, activity_dependencies,
     
     # Create a dictionary for easy lookup of priorities
     priority_dict = {activity: priority for activity, priority in priority_list}
-    
+
+    # Deterministic tie-break: position of the activity in the project file
+    # (without it, ties were broken by the iteration order of a Python set, which changes between runs)
+    file_order = {activity: index for index, activity in enumerate(activity_set)}
+
     # Keep track of the remaining activities to be scheduled
     remaining_activities = set(activity_set.keys())
     no_predecessors = [activity for activity in remaining_activities if not activity_dependencies.get(activity, ([], []))[0]]
@@ -799,7 +808,8 @@ def build_sorted_activities_by_predecessors(activity_set, activity_dependencies,
         
 #        print("no_predecessors = ", no_predecessors)
         # Sort the activities with no predecessors by priority (ascending order, i.e. lower value = highest priority)
-        no_predecessors.sort(key=lambda activity: priority_dict.get(activity, float('inf')))
+        # (on a tie, the activity that comes first in the project file is chosen)
+        no_predecessors.sort(key=lambda activity: (priority_dict.get(activity, float('inf')), file_order[activity]))
         
         # Add the highest-priority activity with no predecessors to the sorted list
         current_activity = no_predecessors.pop(0)  # Select the first one with the highest priority
