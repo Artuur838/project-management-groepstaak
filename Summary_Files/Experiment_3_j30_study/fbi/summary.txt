@@ -1,0 +1,33 @@
+Projects: 480 (RS < 1.0: 360)
+
+Table 5 (RS < 1.0):
+  Best single rule (LFT-Parallel)               dev  5.69%  opt  23.9%  time     2.5 ms
+  Best of 26 combinations                       dev  2.47%  opt  51.9%  time    65.7 ms
+  Best of 26 + FBI serial (our improvement)     dev  1.98%  opt  57.2%  time    69.0 ms
+  Best of 26 + FBI parallel (control)           dev  2.09%  opt  54.2%  time    68.6 ms
+  FBI serial on all 26, best kept               dev  1.17%  opt  67.2%  time   188.5 ms
+  FBI parallel on all 26, best kept             dev  1.24%  opt  60.3%  time   175.9 ms
+
+Control serial vs. parallel:
+  serial FBI improves best-of-26: 63
+  parallel FBI improves best-of-26: 41
+  serial better than parallel: 40
+  parallel better than serial: 21
+  serial = parallel: 299
+  parallel: first iteration (unguarded) longer than S: 156
+  parallel: projects with >= 1 lengthening pass: 262
+  serial: projects with >= 1 lengthening pass (must be 0): 0
+  serial all-26: lengthening passes (must be 0): 0
+  parallel all-26: lengthening passes: 6944
+  serial: max improving iterations: 1
+  parallel: max improving iterations: 2
+
+Gain per RS / RF (pp deviation, best-of-26 -> FBI):
+  RS=0.2: serial 0.82, parallel 0.89, improved 29.2% / 25.8%
+  RS=0.5: serial 0.53, parallel 0.20, improved 17.5% / 6.7%
+  RS=0.7: serial 0.12, parallel 0.03, improved 5.8% / 1.7%
+  RS=1.0: serial 0.00, parallel 0.00, improved 0% / 0%
+  RF=0.25: serial 0.16, parallel 0.02, improved 4.4% / 1.1%
+  RF=0.5: serial 0.57, parallel 0.22, improved 21.1% / 5.6%
+  RF=0.75: serial 0.36, parallel 0.44, improved 13.3% / 12.2%
+  RF=1.0: serial 0.88, parallel 0.83, improved 31.1% / 26.7%

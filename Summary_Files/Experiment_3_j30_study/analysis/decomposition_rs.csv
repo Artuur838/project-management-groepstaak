@@ -1,0 +1,5 @@
+RS,scarcity_cpm_to_opt_pct_of_cpm,rule_opt_to_LFT-Parallel_pct_of_cpm,rule_opt_to_avg26_pct_of_cpm,share_rule_in_total_best_pct
+0.2,44.02,13.68,25.0,23.7
+0.5,6.98,5.1,11.81,42.2
+0.7,2.49,3.29,7.04,56.9
+1.0,0.0,0.0,0.0,0.0

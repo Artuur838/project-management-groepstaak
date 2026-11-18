@@ -1,0 +1,5 @@
+RS,best,best_dev,second,second_dev,LFT-Parallel_dev,serial_mean13,parallel_mean13,best_of_26_dev,best_of_26_pct_opt
+0.2,LFT-Parallel,9.13,MTS-Parallel,10.21,9.13,19.18,14.8,4.95,20.0
+0.5,LST-Parallel,4.51,LFT-Parallel,4.75,4.75,12.9,9.18,1.97,50.8
+0.7,LST-Serial,1.99,LFT-Serial,2.66,3.19,7.85,5.84,0.48,85.0
+1.0,EFT-Parallel / EFT-Serial / EST-Parallel / EST-Serial / GCRWC-Parallel / GCRWC-Serial / GRPW-Parallel / GRPW-Serial / GRWC-Parallel / GRWC-Serial / LFT-Parallel / LFT-Serial / LNRJ-Parallel / LNRJ-Serial / LPT-Parallel / LPT-Serial / LST-Parallel / LST-Serial / MIS-Parallel / MIS-Serial / MSLK-Parallel / MSLK-Serial / MTS-Parallel / MTS-Serial / SPT-Parallel / SPT-Serial,0.0,,,0.0,0.0,0.0,0.0,100

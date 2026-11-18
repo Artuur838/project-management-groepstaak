@@ -1,0 +1,7 @@
+method,avg_dev_from_opt_pct,pct_projects_optimal,avg_time_per_project_ms,avg_dev_all480_pct
+Best single rule (LFT-Parallel),5.69,23.9,2.5,4.27
+Best of 26 combinations,2.47,51.9,65.7,1.85
+Best of 26 + FBI serial (our improvement),1.98,57.2,69.0,1.48
+Best of 26 + FBI parallel (control),2.09,54.2,68.6,1.57
+"FBI serial on all 26, best kept",1.17,67.2,188.5,0.88
+"FBI parallel on all 26, best kept",1.24,60.3,175.9,0.93

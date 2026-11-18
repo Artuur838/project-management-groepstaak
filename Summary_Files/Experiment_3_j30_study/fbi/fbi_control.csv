@@ -1,0 +1,13 @@
+check,value,pool
+serial FBI improves best-of-26,63,RS<1 (360)
+parallel FBI improves best-of-26,41,RS<1 (360)
+serial better than parallel,40,RS<1 (360)
+parallel better than serial,21,RS<1 (360)
+serial = parallel,299,RS<1 (360)
+parallel: first iteration (unguarded) longer than S,156,RS<1 (360)
+parallel: projects with >= 1 lengthening pass,262,RS<1 (360)
+serial: projects with >= 1 lengthening pass (must be 0),0,all 480
+serial all-26: lengthening passes (must be 0),0,all 480
+parallel all-26: lengthening passes,6944,RS<1 (360)
+serial: max improving iterations,1,all 480
+parallel: max improving iterations,2,all 480

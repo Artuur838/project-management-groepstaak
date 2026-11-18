@@ -1,0 +1,26 @@
+Best single method (RS<1): LFT-Parallel
+Best-of-26 (RS<1): avg dev 2.47%, optimal 51.9%
+Best-of-26 (all 480): avg dev 1.85%, optimal 64.0%
+Mean over 13 rules, RS<1: serial 13.31%, parallel 9.94%
+Rules where parallel beats serial (RS<1): 13/13
+RS=1.0: share of (project, method) pairs at optimum = 100.00%, opt==CPM in 100.0% of projects, max dev 0.00%
+eta^2 RS (RS<1 only), best_single: 0.228
+eta^2 RS (RS<1 only), avg_26: 0.403
+eta^2 RS (RS<1 only), best_of_26: 0.301
+cell RF=0.25 RS=0.2: best LFT-Parallel 4.06%, 2nd LST-Parallel 5.51%
+cell RF=0.25 RS=0.5: best LFT-Parallel 1.63%, 2nd LST-Parallel 1.94%
+cell RF=0.25 RS=0.7: best LST-Serial 0.60%, 2nd LFT-Serial 0.63%
+cell RF=0.5 RS=0.2: best LFT-Parallel 10.41%, 2nd LST-Parallel 11.72%
+cell RF=0.5 RS=0.5: best LFT-Parallel 5.04%, 2nd LST-Parallel 5.66%
+cell RF=0.5 RS=0.7: best LST-Serial 2.22%, 2nd LFT-Serial 2.61%
+cell RF=0.75 RS=0.2: best MTS-Parallel 11.49%, 2nd LFT-Parallel 11.71%
+cell RF=0.75 RS=0.5: best LST-Parallel 3.83%, 2nd LFT-Parallel 5.02%
+cell RF=0.75 RS=0.7: best LST-Serial 2.93%, 2nd LST-Parallel 3.49%
+cell RF=1.0 RS=0.2: best LFT-Parallel 10.34%, 2nd MTS-Parallel 11.31%
+cell RF=1.0 RS=0.5: best LST-Parallel 6.59%, 2nd LFT-Parallel 7.29%
+cell RF=1.0 RS=0.7: best LST-Serial 2.20%, 2nd LST-Parallel 2.54%
+NC=1.5 (RS<1): best LFT-Parallel 6.34%
+NC=1.8 (RS<1): best LFT-Parallel 5.74%
+NC=2.1 (RS<1): best LFT-Parallel 4.98%
+Decomposition RS<1: scarcity 17.83% of CPM, rule (LFT-Parallel) 7.36% -> rule share 29.2%
+Worst single result: (59.523809523809526, 'j307_2', 'GRWC-Serial')

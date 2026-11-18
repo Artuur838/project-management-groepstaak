@@ -1,0 +1,717 @@
+==========================================================================
+PRIORITY RULES FOR RESOURCE-CONSTRAINED PROJECT SCHEDULING
+An analysis on PSPLIB J30 and an improved heuristic using ProPy
+[Working title - adjust]
+
+Project Management Group Assignment - Option 2
+Group members: [name 1], [name 2], [name 3], [name 4]
+Lecturer: [name]
+Date: [date]
+==========================================================================
+
+HOW TO USE THIS TEMPLATE
+- Lines starting with ">" are guidance. Delete them once the section is written.
+- [FILL IN] marks where your own text goes.
+- Empty tables and figure placeholders are already in the right place.
+- Write the executive summary and the conclusion last.
+- Sections 2-4 are drafted. Numbers come from
+  Python_Experiments/my_Experiment3_j30_analysis.py (outputs in
+  Summary_Files/Experiment_3_j30_study/analysis/). [TO CONFIRM] marks text
+  that depends on part B, which has not been implemented yet.
+
+
+CONTENTS
+  Executive summary
+  1. Introduction and dataset
+  2. Research question and design
+  3. Implementation
+  4. Results part A: the existing priority rules
+  5. Results part B: our improvement
+  6. Discussion
+  7. Conclusion
+  References
+  Appendices
+
+
+--------------------------------------------------------------------------
+EXECUTIVE SUMMARY
+--------------------------------------------------------------------------
+> Maximum half a page, written for a manager without a technical
+> background. Write this last.
+> - What did we investigate and why does it matter for a project manager?
+> - Key finding part A: how well do simple scheduling rules perform, and
+>   for which kinds of projects do they perform poorly?
+> - Key finding part B: what does our improved method achieve (in % and
+>   in computation time)?
+> - Practical advice: when does a better scheduling method pay off, and
+>   when is a simple rule good enough?
+
+[FILL IN]
+
+
+--------------------------------------------------------------------------
+1. INTRODUCTION AND DATASET
+--------------------------------------------------------------------------
+
+1.1 Problem statement
+> What is resource-constrained project scheduling (RCPSP)? Why are fast
+> priority rules important in practice, even though they are not optimal?
+> A simple example (e.g. a renovation project) can help.
+
+[FILL IN]
+
+1.2 Dataset: PSPLIB J30
+> Source (PSPLIB, via www.or-as.be/research/data), 480 projects, 30
+> activities, 4 renewable resources. Known optimal makespans (j30opt.sm).
+> File names j30p_i and how p maps to NC/RF/RS.
+
+[FILL IN]
+
+Table 1 - Project parameters of J30 (3 x 4 x 4 = 48 combinations x 10 projects)
++-----------+-----------------------------------------------+---------------------------+
+| Parameter | Meaning                                       | Values in J30             |
++-----------+-----------------------------------------------+---------------------------+
+| NC        | Network Complexity: average number of arcs    | 1.5 - 1.8 - 2.1           |
+|           | (precedence relations) per activity           |                           |
+| RF        | Resource Factor: average share of the 4       | 0.25 - 0.50 - 0.75 - 1.00 |
+|           | resource types used by an activity            |                           |
+| RS        | Resource Strength: how ample the resources    | 0.2 - 0.5 - 0.7 - 1.0     |
+|           | are (low = scarce)                            |                           |
++-----------+-----------------------------------------------+---------------------------+
+
+1.3 Why this dataset is suitable
+> Controlled variation of the parameters -> the effect of each property
+> can be measured. Known optima -> a fair benchmark. Large enough for
+> statistical statements.
+
+[FILL IN]
+
+
+--------------------------------------------------------------------------
+2. RESEARCH QUESTION AND DESIGN
+--------------------------------------------------------------------------
+
+2.1 Main research question
+
+To what extent does the performance of priority rules for the
+resource-constrained project scheduling problem depend on the project
+characteristics network complexity (NC), resource factor (RF) and resource
+strength (RS), and can an improved heuristic increase that performance,
+especially for the hardest projects?
+
+Part A of the question is descriptive: we measure how far 13 standard
+priority rules, each combined with two schedule generation schemes (SGS),
+stay from the known optimal project duration on the 480 J30 projects, and
+how this deviation changes with NC, RF and RS. Part B is design-oriented:
+we use the weaknesses found in part A to build an improved heuristic and
+measure how much of the remaining gap it closes and at what cost in
+computation time.
+
+2.2 Sub-questions
+
+Part A - the existing priority rules
+  A1. How large is the average deviation of each rule/SGS combination from
+      the optimal makespan, and for how many projects does each one find
+      the optimum?
+  A2. Which project parameter (NC, RF or RS) has the largest influence on
+      that deviation?
+  A3. Do the best rule and the best SGS (serial or parallel) change
+      depending on the parameter values?
+  A4. How much of the extension of the project beyond its CPM duration is
+      caused by resource scarcity itself (unavoidable), and how much by the
+      choice of the rule (avoidable)?
+
+Part B - our improvement
+  B1. Does our improvement reduce the average deviation from the optimum,
+      and how many projects does it solve to optimality?
+  B2. Is the gain concentrated in the hardest projects (low RS, high RF)?
+  B3. How much extra computation time does it cost, compared with a single
+      priority rule and with the optimal method of experiment 4?
+
+2.3 Hypotheses
+
+The hypotheses follow from the definition of the parameters. A low RS means
+that the resources are scarce compared with the peak demand, so more
+activities compete for the same resources and the order in which a rule
+schedules them matters more (H1). A high RF means that each activity uses
+more resource types, which creates more conflicts (H2). NC only changes the
+precedence network and is expected to matter less (H3). At RS = 1.0 the
+availability equals the peak demand of the earliest-start schedule, so in
+theory the resources never bind (H4). H5 and H6 are the matching
+expectations for part B.
+
+Table 2 - Hypotheses
++----+----------------------------------------------------------------------+
+| #  | Hypothesis                                                           |
++----+----------------------------------------------------------------------+
+| H1 | The lower RS, the larger the deviation of all rules from the optimum.|
+| H2 | A higher RF increases the deviation.                                 |
+| H3 | NC has less influence than RS and RF.                                |
+| H4 | At RS = 1.0, every rule finds the optimal makespan.                  |
+| H5 | Our improvement reduces the deviation most at low RS.                |
+| H6 | At high RS, the improvement yields almost nothing.                   |
++----+----------------------------------------------------------------------+
+
+2.4 Experimental design and assumptions
+
+Full factorial design. Every one of the 480 J30 projects is scheduled with
+every combination of 13 priority rules and 2 schedule generation schemes,
+which gives 26 combinations and 12,480 schedules in total.
+
+Priority rules (as implemented in ProPy, experiment 3), in four groups:
+  - Activity rules:   SPT (shortest processing time), LPT (longest
+                      processing time)
+  - Network rules:    MIS (most immediate successors), MTS (most total
+                      successors), LNRJ (least non-related jobs), GRPW
+                      (greatest rank positional weight)
+  - CPM-based rules:  EST, EFT (earliest start / finish time), LST, LFT
+                      (latest start / finish time), MSLK (minimum slack)
+  - Resource rules:   GRWC (greatest resource work content), GCRWC
+                      (greatest cumulative resource work content)
+
+Schedule generation schemes:
+  - Serial SGS: takes the activities one by one in priority order and
+    places each one at its earliest precedence- and resource-feasible
+    start time. It produces active schedules.
+  - Parallel SGS: moves forward in time and, at each decision point,
+    starts as many eligible activities as the resources allow, in priority
+    order. It produces non-delay schedules.
+
+Performance measures (computed per project and then averaged):
+  - Deviation from the optimum (%) =
+        (makespan - optimal makespan) / optimal makespan x 100
+  - % projects optimal: share of projects where the makespan equals the
+    optimum.
+  - Average rank: per project the 26 combinations are ranked on makespan
+    (1 = best, ties get the average rank), then averaged over the projects.
+  - Best-of-26: per project the shortest makespan over all 26
+    combinations. It is the benchmark for "choose the best rule
+    afterwards" and the starting point for part B.
+  - Decomposition (section 4.4): the extension of the makespan beyond the
+    CPM duration, split into CPM -> optimum and optimum -> rule, both
+    expressed as % of the CPM duration so that the two parts add up.
+
+The 120 projects with RS = 1.0 are reported separately. Section 4.2 shows
+that the resources never bind there and every combination is optimal.
+Including them would make every rule look better without saying anything
+about the rules. Unless stated otherwise, the averages in tables 3 and 5
+are therefore over the remaining 360 projects (RS < 1.0). For the
+parameter analysis we also report eta squared (the share of the variance
+in the deviation explained by one parameter) as a simple effect size.
+
+Assumptions:
+  - Deterministic activity durations, known in advance.
+  - No pre-emption: an activity that has started runs until it finishes.
+  - Four renewable resources with a constant availability over time.
+  - The published optima in j30opt.sm (Demeulemeester & Herroelen) are
+    correct. As a check, for every project and every rule we verified
+    CPM duration <= optimum <= rule makespan.
+  - Ties in priority are broken by the lowest activity number, the order
+    in the project file. This makes the experiment fully deterministic
+    (one run per combination, no random seed involved).
+
+
+--------------------------------------------------------------------------
+3. IMPLEMENTATION
+--------------------------------------------------------------------------
+
+3.1 What ProPy already provided
+
+ProPy (Vanhoucke) provides the building blocks for a single project:
+  - Experiment 3 (my_Experiment3_heuristic.py): reading a project in
+    Patterson (.rcp) format, computing the CPM schedule and the resource
+    scarcity indicators, building a priority list with one of the 13
+    priority rules (create_priority_list), and building a feasible schedule
+    with the serial or parallel SGS (serial_sgs, parallel_sgs in
+    my_RCP_Scheduler.py), including Gantt charts and resource profiles.
+  - Experiment 4 (my_Experiment4_optimal.py): solving the RCPSP to
+    optimality with an integer programming model in PuLP/CBC. This only
+    works for small projects within a reasonable time.
+  - The module my_RCP_Scheduler.py also contains backward versions of both
+    SGSs (backward_serial_sgs, backward_parallel_sgs). Experiment 3 does
+    not use them, but they are the basis of our improvement (3.3).
+
+ProPy works on one project at a time, reads only the .rcp format, and
+compares a schedule only with the CPM duration, not with the optimum.
+
+3.2 What we added
+
+  1. Conversion PSPLIB .sm -> .rcp (convert_sm_to_rcp.py). PSPLIB publishes
+     J30 in its own .sm format. The script reads precedences, durations,
+     resource requests and availabilities, and writes all 480 files to
+     Example_Files/j30_rcp so that ProPy can read them unchanged.
+  2. Batch experiment over all 480 projects
+     (Python_Experiments/my_Experiment3_j30_study.py). For each project it
+     computes the CPM duration and the makespan of the 26 rule/SGS
+     combinations, and stores everything in j30_all_results.csv (12,480
+     rows) plus a summary per combination.
+  3. Fixed tie-break. With equal priority values, the activity with the
+     lowest number is chosen. This makes the results reproducible.
+  4. Linking with the project parameters and the optimum
+     (Python_Experiments/my_Experiment3_j30_analysis.py):
+       - NC, RF and RS are derived from the parameter number p in the file
+         name j30p_i: p = 1-16 -> NC 1.5, 17-32 -> NC 1.8, 33-48 -> NC 2.1;
+         within each block RF increases every 4 values (0.25, 0.50, 0.75,
+         1.00) and RS cycles 0.2, 0.5, 0.7, 1.0. We checked this mapping by
+         recomputing NC and RF directly from the .sm files.
+       - The optimal makespans are read from j30opt.sm (PSPLIB).
+  5. Automatic tables and figures: all tables and figures in section 4 are
+     generated by the analysis script.
+  6. Our improvement: forward-backward improvement (justification) on top
+     of the best-of-26 schedule. [TO CONFIRM once part B is implemented]
+
+3.3 Our improvement in detail
+[TO CONFIRM - draft based on the planned method; update once implemented]
+
+The results of part A (section 4) point to two weaknesses. First, no
+single rule is best for all projects. Choosing the best of the 26
+combinations per project already lowers the average deviation from 5.69%
+(best single rule) to 2.47%. Second, even that best-of-26 schedule is still
+4.95% above the optimum at RS = 0.2, and is optimal in only 20% of those
+projects. Priority rules make one pass and never revise a decision. The
+remaining gap is therefore caused by early choices that turn out badly
+later in the schedule.
+
+Forward-backward improvement (also called justification; Valls et al.,
+2005) repairs exactly this kind of mistake without a new rule:
+
+  1. Start from a feasible schedule S (here: the best of the 26
+     combinations for the project).
+  2. Backward pass: sort the activities on decreasing finish time in S and
+     schedule them with the backward serial SGS, so each activity is
+     shifted as far right as possible (right justification).
+  3. Forward pass: sort the activities on increasing start time in the
+     right-justified schedule and schedule them again with the forward
+     serial SGS, so each activity is shifted as far left as possible (left
+     justification).
+  4. If the makespan improved, set S to the new schedule and go back to
+     step 2. Otherwise stop.
+
+Each pass keeps the schedule feasible and can never make the makespan
+longer, so the method always ends with a schedule at least as good as the
+starting schedule. Because it only reuses ProPy's own SGS functions, the
+extra computation time stays a few extra SGS passes per project, far
+below the integer programming model of experiment 4.
+
+
+--------------------------------------------------------------------------
+4. RESULTS PART A: THE EXISTING PRIORITY RULES
+--------------------------------------------------------------------------
+
+4.1 Ranking of the rules
+
+Table 3 - Performance of the 26 rule/SGS combinations (360 projects with RS < 1.0)
++----------+----------+---------------------+---------------+-----------+
+| Rule     | SGS      | Avg. deviation from | % projects    | Avg. rank |
+|          |          | optimum (%)         | optimal       | (1-26)    |
++----------+----------+---------------------+---------------+-----------+
+| LFT      | Parallel |  5.69               | 23.9          |  7.34     |
+| LST      | Parallel |  6.07               | 25.0          |  7.70     |
+| LST      | Serial   |  6.56               | 35.0          |  7.99     |
+| MTS      | Parallel |  6.87               | 18.6          |  8.88     |
+| LFT      | Serial   |  7.44               | 33.3          |  9.05     |
+| MTS      | Serial   |  8.74               | 25.8          | 10.66     |
+| MSLK     | Parallel |  8.91               | 22.8          | 10.73     |
+| LNRJ     | Parallel |  9.15               | 16.4          | 11.47     |
+| MIS      | Parallel |  9.90               | 13.3          | 12.14     |
+| GRPW     | Parallel | 10.52               | 16.4          | 12.63     |
+| EST      | Parallel | 10.61               |  9.7          | 13.16     |
+| GCRWC    | Parallel | 11.19               | 12.8          | 13.35     |
+| EFT      | Parallel | 11.32               |  8.3          | 14.20     |
+| EST      | Serial   | 11.99               |  8.1          | 14.65     |
+| GRWC     | Parallel | 12.28               | 10.8          | 14.67     |
+| MSLK     | Serial   | 12.66               | 21.7          | 14.25     |
+| MIS      | Serial   | 12.79               | 14.4          | 14.75     |
+| LPT      | Parallel | 13.32               | 11.9          | 15.27     |
+| SPT      | Parallel | 13.39               |  8.9          | 16.11     |
+| GRPW     | Serial   | 13.75               | 17.2          | 15.18     |
+| LNRJ     | Serial   | 14.25               | 16.9          | 16.06     |
+| GCRWC    | Serial   | 14.29               | 12.5          | 15.90     |
+| EFT      | Serial   | 15.44               |  4.2          | 18.23     |
+| GRWC     | Serial   | 15.85               | 11.9          | 17.26     |
+| LPT      | Serial   | 16.45               | 10.3          | 17.86     |
+| SPT      | Serial   | 22.80               |  4.7          | 21.52     |
++----------+----------+---------------------+---------------+-----------+
+| Best of the 26 per project    |  2.47               | 51.9          |  -        |
++-------------------------------+---------------------+---------------+-----------+
+Source: Summary_Files/Experiment_3_j30_study/analysis/rules_vs_optimum.csv.
+Over all 480 projects (incl. RS = 1.0) the best rule, LFT-Parallel, deviates
+4.27% on average.
+
+Conclusion for table 3:
+LFT with the parallel SGS is the best single combination: on average 5.69%
+above the optimum, with the best average rank (7.3 out of 26). The top five
+consists entirely of rules that use the latest start or finish times (LFT,
+LST) or the total number of successors (MTS). These rules look ahead in the
+network and give priority to activities with little room to slip. Simple
+activity rules perform worst: SPT with the serial SGS is 22.8% above the
+optimum on average. Remarkably, the two rules that explicitly look at
+resource use (GRWC, GCRWC) only end up in the middle and lower part of the
+ranking (11-16%).
+
+The parallel SGS gives a lower average deviation than the serial SGS for
+all 13 rules (9.9% vs. 13.3% averaged over the rules). The serial SGS,
+however, more often finds the exact optimum: LST-Serial is optimal in 35%
+of the projects, against 25% for LST-Parallel. This matches the theory
+(Kolisch, 1996). The serial SGS searches among active schedules, a set that
+always contains an optimal schedule, but it has more large outliers. The
+parallel SGS searches among non-delay schedules, which sometimes excludes
+the optimum but is more robust on average.
+
+Even the best rule can be far off for an individual project: up to 27.6%
+above the optimum. No single rule dominates. If the best of the 26
+combinations is chosen per project, the average deviation drops from 5.69%
+to 2.47%, and the share of optimally solved projects rises from 23.9% to
+51.9%. This is the baseline for our improvement in part B.
+
+4.2 Effect of the project characteristics
+
+[INSERT FIGURE: Summary_Files/Experiment_3_j30_study/analysis/fig1_deviation_per_parameter.png]
+Figure 1 - Average deviation from the optimum per RS, RF and NC, for the
+best single rule (LFT-Parallel), the average over the 26 combinations, and
+the best of the 26 per project. RS panel: all 480 projects; RF and NC
+panels: 360 projects with RS < 1.0.
+
+[INSERT FIGURE: Summary_Files/Experiment_3_j30_study/analysis/fig2_heatmap_rf_rs.png]
+Figure 2 - Heatmap RF x RS of the average deviation of the best rule
+(LFT-Parallel). Each cell holds 30 projects (3 NC values x 10 projects).
+
+Supporting numbers (avg. deviation from optimum, %):
++--------+-------+-------+-------+-------+----------+
+|        | Values (low -> high)          | eta^2    |
++--------+-------+-------+-------+-------+----------+
+| RS     |  0.2  |  0.5  |  0.7  |  1.0  |          |
+|  LFT-P |  9.13 |  4.75 |  3.19 |  0.00 |  0.40    |
+|  avg26 | 16.99 | 11.04 |  6.84 |  0.00 |  0.67    |
++--------+-------+-------+-------+-------+----------+
+| RF     |  0.25 |  0.50 |  0.75 |  1.00 |          |
+|  LFT-P |  2.50 |  6.35 |  7.04 |  6.86 |  0.13    |
+|  avg26 |  6.94 | 11.82 | 13.81 | 13.93 |  0.19    |
++--------+-------+-------+-------+-------+----------+
+| NC     |  1.5  |  1.8  |  2.1  |       |          |
+|  LFT-P |  6.34 |  5.74 |  4.98 |       |  0.01    |
+|  avg26 | 12.62 | 11.65 | 10.61 |       |  0.02    |
++--------+-------+-------+-------+-------+----------+
+(RS over all 480 projects; RF and NC over the 360 projects with RS < 1.0.
+Within RS < 1.0 only, eta^2 of RS is 0.23 for LFT-P and 0.40 for avg26,
+still clearly the largest.)
+
+Conclusion for figures 1 and 2:
+H1 (lower RS -> larger deviation): confirmed. RS is the parameter with by
+far the largest effect. For the best rule, the deviation falls from 9.1% at
+RS = 0.2 to 4.8% at 0.5, 3.2% at 0.7 and 0% at 1.0. For the average rule it
+falls from 17.0% to 0%. RS alone explains 40-67% of the variance in the
+deviation. The heatmap shows the same pattern in every RF row. There is
+one small exception (RF = 0.25: 1.6% at RS 0.5 vs. 1.8% at RS 0.7), which
+falls within the noise of 30 projects per cell.
+
+H2 (higher RF -> larger deviation): largely confirmed. The deviation of the
+best rule rises sharply from 2.5% (RF 0.25) to 6.4% (RF 0.50), but then
+levels off (7.0% at 0.75, 6.9% at 1.00). The effect is therefore not
+linear: once activities use at least half of the resource types, adding
+more types hardly makes the scheduling decisions harder for the rule. The
+heatmap shows that RF matters most in combination with scarce resources.
+At RS = 0.2 the deviation rises from 4.1% (RF 0.25) to 10-12% (RF >= 0.5).
+
+H3 (NC matters less than RS and RF): confirmed. NC explains only 1-2% of
+the variance. The small effect it has goes in the opposite direction to
+what one might expect: denser networks give a slightly lower deviation
+(6.3% -> 5.0% for the best rule). A plausible explanation is that more
+precedence relations leave fewer possible orders of the activities, so a
+rule has fewer chances to make a wrong choice.
+
+H4 (at RS = 1.0 every rule is optimal): confirmed. For all 120 projects
+with RS = 1.0, all 26 combinations find the optimal makespan, and that
+optimum equals the CPM duration. This follows from the definition of RS:
+at RS = 1.0 the availability equals the peak demand of the earliest-start
+schedule, so the resources never bind and the choice of rule does not
+matter.
+
+4.3 Best rule and SGS per combination
+
+Table 4 - Best rule per RS value
++------+-----------------------+---------------------+----------------------+
+| RS   | Best rule + SGS       | Avg. deviation (%)  | Serial vs. parallel  |
+|      | (runner-up)           | best (runner-up)    | (avg. of 13 rules)   |
++------+-----------------------+---------------------+----------------------+
+| 0.2  | LFT-Parallel          |  9.13               | 19.18 vs. 14.80      |
+|      | (MTS-Parallel)        | (10.21)             | -> parallel better   |
+| 0.5  | LST-Parallel          |  4.51               | 12.90 vs.  9.18      |
+|      | (LFT-Parallel)        | ( 4.75)             | -> parallel better   |
+| 0.7  | LST-Serial            |  1.99               |  7.85 vs.  5.84      |
+|      | (LFT-Serial)          | ( 2.66)             | -> parallel better on|
+|      |                       |                     | average, but best    |
+|      |                       |                     | rule is serial       |
+| 1.0  | all 26 combinations   |  0.00               | no difference        |
++------+-----------------------+---------------------+----------------------+
+Best of the 26 per project: 4.95% (20.0% optimal) at RS 0.2, 1.97% (50.8%)
+at RS 0.5, 0.48% (85.0%) at RS 0.7.
+Source: Summary_Files/Experiment_3_j30_study/analysis/best_rule_per_rs.csv.
+
+Conclusion for table 4:
+The best rule does change with the parameters, but always stays within the
+same family of latest-time rules (LFT, LST). The best SGS changes as well.
+When resources are scarce (RS 0.2 and 0.5), a parallel variant wins. When
+resources are fairly ample (RS 0.7), LST with the serial SGS is the best
+(2.0%, against 3.2% for LFT-Parallel). Averaged over all 13 rules, the
+parallel SGS remains better at every RS level. The shift therefore applies
+to the strongest rules only: combined with a good priority list, the
+serial SGS can use its larger search space when resources are less tight.
+This is in line with Kolisch (1996), who reports that neither SGS
+dominates and that their relative performance depends on the instance
+characteristics, with the parallel SGS strongest for single-pass priority
+rules. [Check the exact wording in the paper before submitting.]
+
+At the level of the 12 RF x RS cells with RS < 1.0, LFT-Parallel wins 5
+cells, LST-Serial wins all 4 cells with RS = 0.7, LST-Parallel wins 2 cells
+and MTS-Parallel wins 1 (RF 0.75, RS 0.2). NC does not change the winner:
+LFT-Parallel is the best for all three NC values. For a project manager
+this means that RS (and to a lesser extent RF) is enough to choose a rule:
+LFT-Parallel when resources are scarce, LST-Serial when they are fairly
+ample.
+
+4.4 Cost of scarcity vs. cost of the rule
+
+[INSERT FIGURE: Summary_Files/Experiment_3_j30_study/analysis/fig3_decomposition_rs.png]
+Figure 3 - Decomposition of the makespan above the CPM duration per RS
+value, for the best rule LFT-Parallel (both parts as % of the CPM duration).
+
++------+----------------------+----------------------+---------+------------+
+| RS   | CPM -> optimum       | Optimum -> LFT-P     | Total   | Share rule |
+|      | (scarcity, % of CPM) | (rule, % of CPM)     |         |            |
++------+----------------------+----------------------+---------+------------+
+| 0.2  | 44.0                 | 13.7                 | 57.7    | 24%        |
+| 0.5  |  7.0                 |  5.1                 | 12.1    | 42%        |
+| 0.7  |  2.5                 |  3.3                 |  5.8    | 57%        |
+| 1.0  |  0.0                 |  0.0                 |  0.0    |  -         |
++------+----------------------+----------------------+---------+------------+
+| <1.0 | 17.8                 |  7.4                 | 25.2    | 29%        |
++------+----------------------+----------------------+---------+------------+
+(For the average rule instead of LFT-P, the rule part is 25.0%, 11.8% and
+7.0% of the CPM duration at RS 0.2, 0.5 and 0.7.)
+
+The makespan of a resource-feasible schedule is longer than the CPM
+duration for two reasons. The first part, from the CPM duration to the
+optimum, is caused by the resource scarcity itself. No scheduling method
+can avoid it. The second part, from the optimum to the makespan of the
+rule, is caused by the rule and can in principle be improved. (Here both
+parts are expressed as % of the CPM duration, so they add up. That is why
+the rule part differs slightly from the deviations in table 3, which are
+relative to the optimum.)
+
+When resources are scarce (RS 0.2), even the optimal schedule is on
+average 44% longer than the CPM plan. A plan that ignores resources is
+therefore far too optimistic for such projects. The best rule adds another
+13.7% on top of that. That is the largest absolute loss, but only about a
+quarter of the total extension. As resources become more ample, the
+unavoidable part shrinks much faster than the rule part. At RS 0.7 more
+than half of the (small) extension comes from the rule. Over all projects
+with RS < 1.0, about 29% of the extension beyond CPM is caused by the rule
+(7.4% of the CPM duration) and 71% by the scarcity itself.
+
+For part B this means that the largest absolute gain can be made at low
+RS, where the rule adds 13.7% (best rule) to 25% (average rule) of the
+CPM duration. This is the motivation for H5.
+
+
+--------------------------------------------------------------------------
+5. RESULTS PART B: OUR IMPROVEMENT
+--------------------------------------------------------------------------
+
+5.1 Comparison of the methods
+
+We compare our improvement (forward-backward improvement with the serial
+SGS, "FBI serial") with the same procedure built on the parallel SGS ("FBI
+parallel"). The parallel variant serves as a control. It has no guarantee
+that a pass never lengthens the schedule (section 3.3), so a new schedule
+is only accepted when it is strictly shorter. Both variants start from the
+best of the 26 schedules. As an extra variant, we apply each FBI to all 26
+schedules of a project and keep the best result.
+
+Table 5 - Step-by-step improvement (360 projects with RS < 1.0)
++------------------------------------+---------------------+-------------+--------------+
+| Method                             | Avg. deviation from | % projects  | Avg. compu-  |
+|                                    | optimum (%)         | optimal     | tation time  |
+|                                    |                     |             | per project  |
++------------------------------------+---------------------+-------------+--------------+
+| Best single rule (LFT-Parallel)    |  5.69               | 23.9        |   ~2.5 ms *  |
+| Best of 26 combinations            |  2.47               | 51.9        |   65.7 ms    |
+| + FBI serial (our improvement)     |  1.98               | 57.2        |   69.0 ms    |
+| + FBI parallel (control)           |  2.09               | 54.2        |   68.6 ms    |
+| FBI serial on all 26, best kept    |  1.17               | 67.2        |  188.5 ms    |
+| FBI parallel on all 26, best kept  |  1.24               | 60.3        |  175.9 ms    |
+| Optimum (experiment 4 / j30opt)    |  0                  | 100         |  see 5.3     |
++------------------------------------+---------------------+-------------+--------------+
+Times are cumulative: building the 26 schedules plus the FBI passes.
+* One of the 26 schedules (total time of the 26 divided by 26).
+Over all 480 projects (incl. RS = 1.0): 4.27% / 1.85% / 1.48% / 1.57% /
+0.88% / 0.93%.
+Sources: Summary_Files/Experiment_3_j30_study/fbi/table5_methods.csv and
+fbi_control.csv (Python_Experiments/my_Experiment3_j30_fbi.py and
+my_Experiment3_j30_fbi_analysis.py).
+
+Conclusion for table 5:
+FBI serial lowers the average deviation of the best-of-26 schedule from
+2.47% to 1.98%, and raises the share of optimally solved projects from
+51.9% to 57.2%. It improves the schedule in 63 of the 360 projects and never
+makes it worse. Compared with the best single rule (5.69%), about two
+thirds of the gap to the optimum is closed. The extra cost is small: on
+average 3 ms per project on top of the 66 ms for the 26 schedules. The
+method also converges fast: in no project did a second iteration bring a
+further improvement.
+
+The parallel control performs worse on average (2.09%, 54.2% optimal). It
+improves 41 projects instead of 63. In a direct comparison the serial
+variant gives the shorter schedule in 40 projects, the parallel variant in
+21, and in 299 projects they are equal. The control also confirms the
+theory of section 3.3. Not one serial pass lengthened a schedule, in all
+480 projects. Parallel passes lengthened the schedule in 262 of the 360
+projects at least once. In 156 projects the schedule after the first
+parallel iteration was even longer than the starting schedule S. Without
+the acceptance check, the parallel variant would therefore often end up
+worse than where it started.
+
+The largest gain comes from the extra variant. Applying FBI serial to all
+26 schedules and keeping the best halves the deviation of the best of 26
+(2.47% -> 1.17%) and solves 67.2% of the projects to optimality, at about
+0.19 s per project. A schedule that was not the best of the 26 can become
+the best after justification. Here too, serial beats parallel (1.17% vs.
+1.24%, 67.2% vs. 60.3% optimal).
+
+5.2 Where does the improvement help?
+
+[INSERT FIGURE: Summary_Files/Experiment_3_j30_study/fbi/fig4_fbi_gain_rs_rf.png]
+Figure 4 - Reduction of the average deviation from the optimum (percentage
+points, compared with the best of 26) by FBI serial and FBI parallel, per
+RS value (all 480 projects) and per RF value (360 projects with RS < 1.0).
+
+Supporting numbers (avg. deviation from optimum, %; share of projects improved):
++-------+----------+------------+--------------+---------------+--------------------+
+|       | Best of  | FBI serial | FBI parallel | Gain serial / | % projects         |
+|       | 26       |            |              | parallel (pp) | improved (ser/par) |
++-------+----------+------------+--------------+---------------+--------------------+
+| RS 0.2|  4.95    |  4.12      |  4.06        | 0.82 / 0.89   | 29.2 / 25.8        |
+| RS 0.5|  1.97    |  1.44      |  1.77        | 0.53 / 0.20   | 17.5 /  6.7        |
+| RS 0.7|  0.48    |  0.36      |  0.45        | 0.12 / 0.03   |  5.8 /  1.7        |
+| RS 1.0|  0.00    |  0.00      |  0.00        | 0.00 / 0.00   |  0   /  0          |
++-------+----------+------------+--------------+---------------+--------------------+
+| RF .25|  0.31    |  0.15      |  0.29        | 0.16 / 0.02   |  4.4 /  1.1        |
+| RF .50|  2.37    |  1.80      |  2.15        | 0.57 / 0.22   | 21.1 /  5.6        |
+| RF .75|  2.99    |  2.64      |  2.55        | 0.36 / 0.44   | 13.3 / 12.2        |
+| RF 1.0|  4.19    |  3.32      |  3.37        | 0.88 / 0.83   | 31.1 / 26.7        |
++-------+----------+------------+--------------+---------------+--------------------+
+Source: Summary_Files/Experiment_3_j30_study/fbi/fbi_gain_per_rs_rf.csv.
+
+Conclusion (test H5 and H6):
+H5 (the improvement helps most at low RS): confirmed. The gain of FBI
+serial is largest at RS = 0.2 (0.82 percentage points, 29% of the projects
+improved) and falls to 0.53 at RS 0.5 and 0.12 at RS 0.7. RF shows the same
+picture from the other side: the more resource types an activity uses, the
+larger the gain (0.16 at RF 0.25 up to 0.88 at RF 1.0). FBI therefore helps
+exactly where part A found the largest gap (sections 4.2 and 4.4): scarce
+resources and many resource conflicts. Even there, a gap remains. At
+RS 0.2 the deviation after FBI is still 4.1%, and only 24% of those
+projects are solved to optimality.
+
+H6 (almost no gain at high RS): confirmed. At RS 0.7 the gain is only 0.12
+percentage points. The best of 26 is already within 0.5% of the optimum
+there, and optimal in 85% of the projects, so there is little left to
+improve. At RS 1.0 there is nothing to improve at all (section 4.2).
+
+Serial vs. parallel per project type: the serial variant is clearly better
+at moderate scarcity (RS 0.5: gain 0.53 vs. 0.20) and at RF 0.25-0.50. When
+resources are very scarce (RS 0.2) and at RF 0.75, the parallel variant
+gains slightly more (0.89 vs. 0.82 at RS 0.2). A plausible explanation is
+that with very scarce resources, a non-delay schedule is more often close to
+optimal, so the parallel SGS's tendency to start activities as early as
+possible does less harm. This difference is small compared with the
+overall advantage of the serial variant and with its guarantee of never
+lengthening a schedule. For that reason the serial variant remains our
+improvement.
+
+5.3 Computation time
+> Compare the computation time of the heuristic with that of experiment 4
+> on a small sample. Is the gain worth the extra time?
+
+[FILL IN]
+
+
+--------------------------------------------------------------------------
+6. DISCUSSION
+--------------------------------------------------------------------------
+
+6.1 Management perspective: advantages
+> E.g. concrete advice on when a better scheduling method pays off; rules
+> are fast and easy to explain; project characteristics can be assessed
+> in advance.
+
+[FILL IN]
+
+6.2 Management perspective: disadvantages and limitations
+> E.g. artificial data, 30 activities, no uncertainty in durations, a few
+> percent can mean a lot of time and money in real projects.
+
+[FILL IN]
+
+6.3 Relation to existing knowledge
+> Do our results confirm or nuance what is in the book or the literature
+> (e.g. Kolisch & Hartmann on priority rules, forward-backward
+> improvement)?
+
+[FILL IN]
+
+6.4 Improvements and further research
+> E.g. J60/J120, uncertain durations (experiment 6/8), metaheuristics,
+> adaptive rule selection.
+
+[FILL IN]
+
+
+--------------------------------------------------------------------------
+7. CONCLUSION
+--------------------------------------------------------------------------
+> Short answer to the main research question, and per hypothesis:
+> confirmed, rejected or partially confirmed.
+
+Table 6 - Overview of hypotheses
++----+----------------------+-----------------------------------------------+
+| #  | Result               | Explanation                                   |
++----+----------------------+-----------------------------------------------+
+| H1 |                      |                                               |
+| H2 |                      |                                               |
+| H3 |                      |                                               |
+| H4 |                      |                                               |
+| H5 |                      |                                               |
+| H6 |                      |                                               |
++----+----------------------+-----------------------------------------------+
+
+[FILL IN]
+
+
+--------------------------------------------------------------------------
+REFERENCES
+--------------------------------------------------------------------------
+> Use one citation style (e.g. APA).
+- Vanhoucke, M. - Data-Driven Project Management with Python (ProPy),
+  www.or-as.be/books/pmpy
+- Kolisch, R. & Sprecher, A. (1997). PSPLIB - A project scheduling problem
+  library. European Journal of Operational Research.
+- Kolisch, R. (1996). Serial and parallel resource-constrained project
+  scheduling methods revisited: Theory and computation. European Journal
+  of Operational Research, 90(2), 320-333.
+- Demeulemeester, E. & Herroelen, W. (1997). New benchmark results for the
+  resource-constrained project scheduling problem. Management Science,
+  43(11), 1485-1492. (Source of the J30 optima in j30opt.sm.)
+- Valls, V., Ballestin, F. & Quintanilla, S. (2005). Justification and RCPSP:
+  A technique that pays. European Journal of Operational Research, 165(2),
+  375-386.
+- [FILL IN]
+
+
+--------------------------------------------------------------------------
+APPENDICES
+--------------------------------------------------------------------------
+> E.g. extra tables per parameter set, code fragments, link to the
+> repository, task division within the group.
+
+[FILL IN]
