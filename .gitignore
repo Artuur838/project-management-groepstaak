@@ -1,0 +1,12 @@
+# Python: automatisch gemaakte bestanden
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# macOS: verborgen systeembestanden en zip-resten
+.DS_Store
+__MACOSX/
+
+# Editor- en OS-bestanden
+.vscode/
+Thumbs.db

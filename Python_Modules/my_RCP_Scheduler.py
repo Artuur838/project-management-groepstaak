@@ -1371,7 +1371,9 @@ def plot_resource_profiles(activity_schedule, resource_availability, resource_re
                                         xlabel_size=None, ylabel_size=None,
                                         xtick_size=None, ytick_size=None,
                                         legend_size=None,
-                                        title_size=None):
+                                        title_size=None, save_path=None):
+    # save_path (optional): if given, each resource profile is also saved as an image.
+    #   The resource name is added to the file name, e.g. 'folder/profile.png' -> 'folder/profile_R1.png'
 
 #    global Value_xlabel_size, Value_ylabel_size, Value_xtick_size, Value_ytick_size, Value_title_size
 
@@ -1526,6 +1528,14 @@ def plot_resource_profiles(activity_schedule, resource_availability, resource_re
         if legend_size > 0:
             plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize=legend_size)
         plt.grid(True)
+
+        # Save the resource profile as an image (one file per resource)
+        if save_path is not None:
+            import os
+            base, ext = os.path.splitext(save_path)
+            resource_label = str(resource).replace(" ", "")
+            save_figure(plt.gcf(), f"{base}_{resource_label}{ext or '.png'}")
+
         plt.show()
 
 

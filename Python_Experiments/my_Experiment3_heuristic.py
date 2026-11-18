@@ -94,6 +94,10 @@ add_dummy_nodes_to_project_data(activity_set,activity_names,sul=successors_list,
 
 activity_dependencies = create_activity_network_dependencies({},successors_list,activity_names, debugInfo = False)
 
+# Folder where the figures of this experiment are saved (one subfolder per project, e.g. Summary_Files/Experiment_3_figures/j301_1/)
+project_label = os.path.splitext(os.path.basename(filename))[0]
+figure_folder = os.path.join(Infofolder, "Experiment_3_figures", project_label)
+
 # Construct the CPM schedule
 graph, PD, BAC, planned_schedule = calculate_critical_path(activity_set, activity_dependencies, activity_names)
 print('Planned duration (PD) = ', PD)
@@ -106,7 +110,9 @@ visualize_network(graph, activity_names,showCP = True, showDummy = True, curvedE
 #show_gantt_chart(planned_schedule, showCP=False, showDummy=False, showCost=False, 
 #                            xlabel_size = 25, ylabel_size = 25,
 #                            xtick_size = 15, ytick_size = 15, title_size = 25)
-show_gantt_chart(planned_schedule, showCP=True, showDummy=False, showCost=False)
+show_gantt_chart(planned_schedule, showCP=True, showDummy=False, showCost=False,
+                 title=f"CPM schedule without resources ({project_label}, duration = {PD})",
+                 save_path=os.path.join(figure_folder, "gantt_cpm.png"))
 
 # Visualise network and calculate the network topology indicators
 visualize_network(graph, activity_names, showEdgeLabels=False, node_size=2000,showDummy = True, showCP = False, curvedEdges = True)
@@ -114,7 +120,8 @@ SP, AD, LA, TF = calculate_network_topology_indicators(activity_set, activity_de
 
 
 
-plot_resource_profiles(planned_schedule, resource_availability, resource_requirements, legend_size=12, showName = False)
+plot_resource_profiles(planned_schedule, resource_availability, resource_requirements, legend_size=12, showName = False,
+                       save_path=os.path.join(figure_folder, "resources_cpm.png"))
 plot_resource_profiles(planned_schedule, resource_availability, resource_requirements, legend_size=0, showName = False)
 #plot_resource_profiles(planned_schedule, resource_availability, resource_requirements,
 #                                        xlabel_size=15, ylabel_size=15, # Title of axes (Optional parameter)
@@ -177,9 +184,12 @@ print("Project cost (budget at completion) = ", project_cost)
 for activity, schedule in activity_schedule.items():
     print(f"{activity}: {schedule}")
 
-show_gantt_chart(activity_schedule)
+show_gantt_chart(activity_schedule,
+                 title=f"Resource-feasible schedule ({priority_rule}, parallel SGS, {project_label}, duration = {project_makespan})",
+                 save_path=os.path.join(figure_folder, f"gantt_{priority_rule}_parallel.png"))
 
-plot_resource_profiles(activity_schedule, resource_availability, resource_requirements, showName = False)
+plot_resource_profiles(activity_schedule, resource_availability, resource_requirements, showName = False,
+                       save_path=os.path.join(figure_folder, f"resources_{priority_rule}_parallel.png"))
 
 ###########################################################################################
 ### Step 4 Give the results for all priority rules

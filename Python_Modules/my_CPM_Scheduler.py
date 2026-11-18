@@ -504,7 +504,7 @@ def visualize_network(G, activity_names,
 def show_gantt_chart(schedule, showCP=True, showDummy=False, showCost=False, showName=True,
                                     xlabel_size=None, ylabel_size=None,
                                     xtick_size=None, ytick_size=None,
-                                    title_size=None):
+                                    title_size=None, title=None, save_path=None):
     """
     Displays a Gantt chart from a schedule dictionary with optional font-size and bar-height control.
 
@@ -521,6 +521,11 @@ def show_gantt_chart(schedule, showCP=True, showDummy=False, showCost=False, sho
     xlabel_size, ylabel_size, xtick_size, ytick_size, title_size : float, optional
         Font sizes for X-axis label, Y-axis label, X-axis ticks, Y-axis ticks, and title.
         Defaults are taken from global variables if not provided.
+    title : str, optional
+        Title of the chart. Default is 'Gantt Chart of Activities'.
+    save_path : str, optional
+        If given, the chart is also saved as an image to this path (e.g. 'Summary_Files/gantt.png').
+        Missing folders are created. Default is None (only shown on screen).
     """
 
     # Use global variables if function parameters are None
@@ -603,12 +608,30 @@ def show_gantt_chart(schedule, showCP=True, showDummy=False, showCost=False, sho
     ax.set_xlabel('Time', fontsize=xlabel_size)
     ax.set_ylabel('Activities', fontsize=ylabel_size)
     ax.set_xticklabels(ax.get_xticks(), fontsize=xtick_size)
-    ax.set_title('Gantt Chart of Activities', fontsize=title_size)
+    ax.set_title(title if title is not None else 'Gantt Chart of Activities', fontsize=title_size)
 
     # Grid and layout
     ax.grid(axis='x')
     plt.tight_layout()
-    plt.show()  
+
+    # Save the chart as an image (before plt.show(), which clears the figure)
+    if save_path is not None:
+        save_figure(fig, save_path)
+
+    plt.show()
+
+
+def save_figure(fig, save_path, dpi=200):
+    """
+    Saves a matplotlib figure to save_path (e.g. 'Summary_Files/Experiment_3_figures/gantt.png').
+    Missing folders are created automatically.
+    """
+    import os
+    folder = os.path.dirname(save_path)
+    if folder:
+        os.makedirs(folder, exist_ok=True)
+    fig.savefig(save_path, dpi=dpi, bbox_inches='tight')
+    print(f"Figure saved: {save_path}")
     
 def show_design_structure_matrix(activity_dependencies,
                                  xlabel_size=None, ylabel_size=None,
